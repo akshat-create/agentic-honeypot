@@ -12,21 +12,20 @@ class HoneypotRequest(BaseModel):
 @app.get("/")
 def root():
     return {
-        "message": "✅ Agentic Honeypot API is running.",
-        "usage": "Go to /docs for Swagger UI or POST to /honeypot"
+        "status": "running",
+        "message": "Agentic Honeypot API is live",
+        "docs": "/docs",
+        "endpoint": "POST /honeypot"
     }
 
 @app.post("/honeypot")
-def honeypot(
-    data: HoneypotRequest,
-    x_api_key: str = Header(None)
-):
+def honeypot(data: HoneypotRequest, x_api_key: str = Header(None)):
     if x_api_key != os.getenv("API_KEY"):
         raise HTTPException(status_code=401, detail="Invalid API Key")
 
     return {
         "conversation_id": data.conversation_id,
         "classification": "scam",
-        "confidence": 0.92,
-        "reason": "Detected phishing patterns"
+        "confidence": 0.95,
+        "reason": "Phishing-style message detected"
     }
