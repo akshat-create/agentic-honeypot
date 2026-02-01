@@ -1,12 +1,8 @@
 import os
-import openai
+from openai import OpenAI
 
-# Load key from environment
-OPENAI_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_KEY:
-    raise ValueError("OPENAI_API_KEY not found. Make sure it is set in .env")
-
-openai.api_key = OPENAI_KEY
+# Initialize OpenAI client using secret key from environment
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 SYSTEM_PROMPT = """
 You are a normal person chatting online.
@@ -22,23 +18,15 @@ You must:
 """
 
 def generate_agent_reply(history):
-    """
-    Generates a reply using OpenAI GPT-4.1-mini
-    """
-    # Format messages for OpenAI
+    # Prepare messages
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-    for h in history:
-        # Convert 'agent' role to 'user' so OpenAI interprets previous agent replies correctly
-        role = "user" if h["role"] == "agent" else "assistant"
-        messages.append({"role": role, "content": h["content"]})
+    messages += [{"role": "user", "content": msg["message"]} for msg in history]
 
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4.1-mini",
-            messages=messages,
-            temperature=0.6
-        )
-        return response.choices[0].message["content"]
-    except Exception as e:
-        print("OpenAI API Error:", e)
-        return "Sorry, something went wrong. Can you repeat?"
+    # Call OpenAI chat completion
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=messages,
+        temperature=0.6
+    )
+
+    return {"reply": response.choices[0].message.content}
