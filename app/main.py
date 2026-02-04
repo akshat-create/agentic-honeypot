@@ -1,62 +1,74 @@
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
 import os
 from app.agent import analyze_message
 
 app = FastAPI(title="Agentic Honeypot API")
 
-API_KEY = os.getenv("API_KEY", "MY_SECRET_KEY")
+# --------------------
+# Models
+# --------------------
 
+class MessageObj(BaseModel):
+    sender: Optional[str] = "user"
+    text: str
+    timestamp: Optional[int] = 0
 
-class IncomingMessage(BaseModel):
+class HoneypotRequest(BaseModel):
     sessionId: str
-    message: dict
-    conversationHistory: list = []
-    metadata: dict = {}
+    message: MessageObj
+    conversationHistory: Optional[List[Any]] = []
+    metadata: Optional[Dict[str, Any]] = {}
 
+# --------------------
+# Root health check
+# --------------------
 
 @app.get("/")
 def root():
-    return {"status": "success", "reply": "Agentic Honeypot API is running"}
+    return {
+        "message": "✅ Agentic Honeypot API is running.",
+        "usage": "POST to / or /honeypot"
+    }
 
+# --------------------
+# Core handler (shared)
+# --------------------
+
+def handle_request(payload: HoneypotRequest):
+    result = analyze_message(payload.message.text)
+
+    if result["classification"] == "scam":
+        reply = "Scam detected. Do not respond to this message."
+    else:
+        reply = "This message looks safe."
+
+    return {
+        "status": "success",
+        "classification": result["classification"],
+        "confidence": result["confidence"],
+        "reply": reply
+    }
+
+# --------------------
+# Accept POST on /
+# --------------------
 
 @app.post("/")
-def honeypot_root(payload: IncomingMessage, x_api_key: str = Header(...)):
-    if x_api_key != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
+def detect_root(
+    payload: HoneypotRequest,
+    x_api_key: Optional[str] = Header(None)
+):
+    return handle_request(payload)
 
-    text = payload.message.get("text", "")
-
-    result = analyze_message(text)
-
-    reply_text = (
-        "Scam detected. Do not respond to this message."
-        if result["classification"] == "scam"
-        else "Message looks safe."
-    )
-
-    return {
-        "status": "success",
-        "reply": reply_text
-    }
-
+# --------------------
+# Accept POST on /honeypot
+# --------------------
 
 @app.post("/honeypot")
-def honeypot(payload: IncomingMessage, x_api_key: str = Header(...)):
-    if x_api_key != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
-
-    text = payload.message.get("text", "")
-
-    result = analyze_message(text)
-
-    reply_text = (
-        "Scam detected. Do not respond to this message."
-        if result["classification"] == "scam"
-        else "Message looks safe."
-    )
-
-    return {
-        "status": "success",
-        "reply": reply_text
-    }
+def detect_honeypot(
+    payload: HoneypotRequest,
+    x_api_key: Optional[str] = Header(None)
+):
+    return handle_request(payload)
