@@ -1,42 +1,61 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from app.agent import analyze_message
+import os
 
 app = FastAPI(title="Agentic Honeypot API")
 
-class MessageObj(BaseModel):
-    sender: Optional[str] = "user"
-    text: str
-    timestamp: Optional[int] = 0
+API_KEY = os.getenv("API_KEY", "MY_SECRET_KEY")
+
+# ---------- Models ----------
+
+class IncomingMessage(BaseModel):
+    sender: Optional[str] = None
+    text: Optional[str] = None
+    timestamp: Optional[int] = None
 
 class HoneypotRequest(BaseModel):
-    sessionId: str
-    message: MessageObj
-    conversationHistory: Optional[List[Any]] = []
-    metadata: Optional[Dict[str, Any]] = {}
+    sessionId: Optional[str] = None
+    message: Optional[Any] = None
+    conversationHistory: Optional[list] = []
+
+# ---------- Routes ----------
 
 @app.get("/")
 def root():
     return {
         "message": "✅ Agentic Honeypot API is running.",
-        "usage": "POST to / or /honeypot"
-    }
-
-def process(payload: HoneypotRequest):
-    result = analyze_message(payload.message.text)
-    reply = "Scam detected. Do not respond." if result["classification"] == "scam" else "This looks safe."
-    return {
-        "status": "success",
-        "classification": result["classification"],
-        "confidence": result["confidence"],
-        "reply": reply
+        "usage": "POST to /"
     }
 
 @app.post("/")
-def detect_root(payload: HoneypotRequest):
-    return process(payload)
+def honeypot(
+    body: HoneypotRequest,
+    x_api_key: str = Header(...)
+):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
 
-@app.post("/honeypot")
-def detect_honeypot(payload: HoneypotRequest):
-    return process(payload)
+    # Extract message text (supports both formats)
+    text = None
+    if isinstance(body.message, dict):
+        text = body.message.get("text")
+    elif isinstance(body.message, str):
+        text = body.message
+
+    if not text:
+        raise HTTPException(status_code=400, detail="Invalid message format")
+
+    scam_keywords = ["otp", "blocked", "verify", "bank", "urgent", "account"]
+
+    is_scam = any(word in text.lower() for word in scam_keywords)
+
+    if is_scam:
+        reply = "Scam detected. Do not respond to this message."
+    else:
+        reply = "Message appears safe."
+
+    return {
+        "status": "success",
+        "reply": reply
+    }
