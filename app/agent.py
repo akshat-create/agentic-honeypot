@@ -1,32 +1,18 @@
-import os
-from openai import OpenAI
+def analyze_message(text: str):
+    scam_keywords = ["otp", "bank", "blocked", "verify", "urgent", "account"]
 
-# Initialize OpenAI client using secret key from environment
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    text_lower = text.lower()
+    score = sum(word in text_lower for word in scam_keywords)
 
-SYSTEM_PROMPT = """
-You are a normal person chatting online.
-You must:
-- Sound worried, cooperative, and confused
-- Never reveal you suspect a scam
-- Keep the conversation going
-- Try to extract:
-  - Bank account numbers
-  - UPI IDs
-  - Payment links
-  - Websites
-"""
-
-def generate_agent_reply(history):
-    # Prepare messages
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-    messages += [{"role": "user", "content": msg["message"]} for msg in history]
-
-    # Call OpenAI chat completion
-    response = client.chat.completions.create(
-        model="gpt-4.1-mini",
-        messages=messages,
-        temperature=0.6
-    )
-
-    return {"reply": response.choices[0].message.content}
+    if score >= 2:
+        return {
+            "classification": "scam",
+            "confidence": 0.9,
+            "reason": "Suspicious banking or phishing keywords detected"
+        }
+    else:
+        return {
+            "classification": "legit",
+            "confidence": 0.9,
+            "reason": "No scam indicators found"
+        }

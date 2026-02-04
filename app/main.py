@@ -1,35 +1,62 @@
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 import os
-from app.agent import generate_agent_reply
+from app.agent import analyze_message
 
 app = FastAPI(title="Agentic Honeypot API")
 
-class HoneypotRequest(BaseModel):
-    conversation_id: str
-    message: str
-    history: list = []
+API_KEY = os.getenv("API_KEY", "MY_SECRET_KEY")
 
-# Root route for Render homepage
+
+class IncomingMessage(BaseModel):
+    sessionId: str
+    message: dict
+    conversationHistory: list = []
+    metadata: dict = {}
+
+
 @app.get("/")
 def root():
+    return {"status": "success", "reply": "Agentic Honeypot API is running"}
+
+
+@app.post("/")
+def honeypot_root(payload: IncomingMessage, x_api_key: str = Header(...)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+
+    text = payload.message.get("text", "")
+
+    result = analyze_message(text)
+
+    reply_text = (
+        "Scam detected. Do not respond to this message."
+        if result["classification"] == "scam"
+        else "Message looks safe."
+    )
+
     return {
-        "status": "running",
-        "message": "✅ Agentic Honeypot API is live",
-        "docs": "/docs",
-        "endpoint": "POST /honeypot"
+        "status": "success",
+        "reply": reply_text
     }
 
-# Honeypot POST endpoint
+
 @app.post("/honeypot")
-def honeypot(
-    data: HoneypotRequest,
-    x_api_key: str = Header(None)
-):
-    # Check hackathon API key
-    if x_api_key != os.getenv("API_KEY"):
+def honeypot(payload: IncomingMessage, x_api_key: str = Header(...)):
+    if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="Invalid API Key")
-    
-    # Call your agent logic
-    reply = generate_agent_reply(data.history)
-    return reply
+
+    text = payload.message.get("text", "")
+
+    result = analyze_message(text)
+
+    reply_text = (
+        "Scam detected. Do not respond to this message."
+        if result["classification"] == "scam"
+        else "Message looks safe."
+    )
+
+    return {
+        "status": "success",
+        "reply": reply_text
+    }
