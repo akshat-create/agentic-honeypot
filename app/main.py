@@ -1,41 +1,53 @@
 from fastapi import FastAPI, Header, HTTPException, Request
-import os
+from pydantic import BaseModel
+from typing import Optional, Any, Dict
 
 app = FastAPI(title="Agentic Honeypot API")
 
-API_KEY = os.getenv("API_KEY", "MY_SECRET_KEY")
+API_KEY = "MY_SECRET_KEY"
 
 
+# ---------- AUTH ----------
+async def verify_key(x_api_key: Optional[str] = Header(None)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+
+
+# ---------- ROOT HEALTH ----------
 @app.get("/")
 def root():
     return {
         "message": "✅ Agentic Honeypot API is running.",
-        "usage": "POST to /"
+        "usage": "POST / with x-api-key header"
     }
 
 
+# ---------- UNIVERSAL POST HANDLER ----------
 @app.post("/")
-async def honeypot(request: Request, x_api_key: str = Header(..., alias="x-api-key")):
-    if x_api_key != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
-
+async def honeypot_root(request: Request, x_api_key: Optional[str] = Header(None)):
+    await verify_key(x_api_key)
     body = await request.json()
 
-    # Try to extract message text safely from ANY structure
-    text = ""
+    # Accept ANY format GUVI sends
+    text = "Hello"
+
     try:
-        if isinstance(body.get("message"), dict):
-            text = body["message"].get("text", "")
-        elif isinstance(body.get("message"), str):
-            text = body["message"]
+        if isinstance(body, dict):
+            if "message" in body:
+                if isinstance(body["message"], dict):
+                    text = body["message"].get("text", "")
+                elif isinstance(body["message"], str):
+                    text = body["message"]
+            elif "text" in body:
+                text = body["text"]
     except:
-        text = ""
+        pass
 
-    text = text.lower()
+    # Simple honeypot logic
+    scam_words = ["otp", "verify", "blocked", "urgent", "bank", "account"]
+    is_scam = any(word in text.lower() for word in scam_words)
 
-    scam_keywords = ["otp", "verify", "blocked", "account", "bank", "urgent", "click"]
-
-    if any(word in text for word in scam_keywords):
+    if is_scam:
         reply = "Scam detected. Do not respond to this message."
     else:
         reply = "Message appears safe."
@@ -44,3 +56,9 @@ async def honeypot(request: Request, x_api_key: str = Header(..., alias="x-api-k
         "status": "success",
         "reply": reply
     }
+
+
+# ---------- BACKWARD COMPATIBILITY ----------
+@app.post("/honeypot")
+async def honeypot_alt(request: Request, x_api_key: Optional[str] = Header(None)):
+    return await honeypot_root(request, x_api_key)
