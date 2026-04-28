@@ -173,7 +173,7 @@ The system automatically extracts:
 
 ## 👨‍💻 Author
 
-**Akshat Pandey** — B.Tech CSE (Data Science), 2nd Year
+**Akshat Pandey** — B.Tech CSE (Data Science)
 [GitHub](https://github.com/akshat-create) · [LinkedIn](https://www.linkedin.com/in/akshatpandey8299/)
 
 Originally built for the **India AI-Impact Buildathon 2026**. Upgraded to production-grade for real-world deployment.
