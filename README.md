@@ -1,211 +1,185 @@
-# Agentic Honeypot
+# 🍯 Agentic Honeypot — AI-Powered Scam Intelligence System
 
-An AI-assisted scam intelligence demo that detects scam messages, keeps the scammer engaged, extracts useful indicators, and displays everything in a live dashboard.
+> An autonomous AI agent that lures scammers, engages them in multi-turn conversations, and extracts actionable threat intelligence — all without human intervention.
 
-The app works in two modes:
-- `Gemini mode` when a valid Gemini API key is available
-- `Fallback mode` when Gemini is unavailable or rate-limited
+![Python](https://img.shields.io/badge/Python-3.12-blue?style=flat-square&logo=python)
+![Flask](https://img.shields.io/badge/Flask-3.0-black?style=flat-square&logo=flask)
+![Gemini](https://img.shields.io/badge/Gemini-2.0_Flash-orange?style=flat-square&logo=google)
+![Deployed](https://img.shields.io/badge/Deployed-Render-46E3B7?style=flat-square&logo=render)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-Fallback mode is fully usable for demos and portfolio uploads. Scam detection, indicator extraction, session tracking, and the dashboard still work without any paid API.
+---
 
-## Features
+## 🔗 Live Demo
+👉 **[https://agentic-honeypot-1-jcah.onrender.com](https://agentic-honeypot-1-jcah.onrender.com)**
 
-- Detects common scam categories:
-  - UPI fraud
-  - prize / lottery scams
-  - job fraud
-  - bank KYC scams
-  - investment scams
-  - phishing
-- Extracts indicators from messages:
-  - UPI IDs
-  - phone numbers
-  - phishing links
-  - bank account-like number strings
-  - IFSC patterns
-  - Aadhaar-like patterns
-- Live dashboard with:
-  - threat feed
-  - simulator panel
-  - extracted intelligence view
-  - fallback / Gemini status indicator
-- API endpoints for hackathon-style integration
+![Dashboard Preview](screenshot.png)
 
-## Tech Stack
+---
 
-- Python 3.12
-- Flask
-- Google Gemini API via `google-generativeai`
-- Vanilla HTML, CSS, and JavaScript
+## 🎯 What It Does
 
-## Project Structure
+Most scam detection systems **block** threats. This system **engages** them.
 
-```text
-.
-├── app.py
-├── Procfile
-├── README.md
-├── requirements.txt
-├── runtime.txt
-└── templates/
-    └── dashboard.html
+The honeypot impersonates a gullible victim ("Ramu Kaka") and autonomously:
+- **Detects** scam messages across 6 categories (UPI fraud, phishing, lottery, job fraud, KYC, investment)
+- **Engages** the scammer in believable multi-turn conversation using Gemini AI
+- **Extracts** intelligence: UPI IDs, phone numbers, phishing links, bank accounts, IFSC codes
+- **Reports** findings with confidence scores and structured summaries
+- **Visualizes** everything on a live threat intelligence dashboard
+
+---
+
+## 🏗️ Architecture
+
+```
+Scammer Message
+      │
+      ▼
+┌─────────────────┐
+│  Scam Detector  │ ← Rule-based pattern matching (6 scam types)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Intel Extractor│ ← Regex-based: UPI IDs, phones, links, accounts
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Gemini AI Agent│ ← Plays "Ramu Kaka", keeps scammer engaged
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Session Manager│ ← Tracks state, decides when to close
+└────────┬────────┘
+         │
+         ▼
+  Intelligence Report + Live Dashboard
 ```
 
-## Local Setup
+---
 
-### 1. Create a virtual environment
+## 🚀 Features
 
-```bash
-python3.12 -m venv .venv312
-source .venv312/bin/activate
+| Feature | Description |
+|---|---|
+| **Multi-turn Agentic Conversations** | AI maintains context across entire scammer interaction |
+| **6 Scam Categories** | UPI fraud, lottery, job fraud, bank KYC, investment scam, phishing |
+| **Real-time Intel Extraction** | UPI IDs, phone numbers, phishing URLs, bank accounts, IFSC, Aadhaar patterns |
+| **Confidence Scoring** | Each detected scam is scored 0–1 based on pattern density |
+| **Live Dashboard** | Real-time threat feed with session replay and scammer simulator |
+| **REST API** | Hackathon-compliant + extended endpoints |
+| **Fallback Mode** | Works without API key using smart rule-based responses |
+| **Session Management** | Auto-closes sessions after intel extraction or max turns |
+
+---
+
+## 🧪 Try It Live
+
+Open the dashboard and use the **Scammer Simulator** panel. Paste any of these:
+
 ```
-
-### 2. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Create your env file
-
-```bash
-cp .env.example .env
-```
-
-Default `.env.example`:
-
-```env
-GEMINI_API_KEY=
-GEMINI_MODEL=gemini-2.0-flash-lite
-SECRET_API_KEY=honeypot-local-2026
-MAX_TURNS=12
-PORT=5000
-```
-
-If you do not want to use Gemini, leave `GEMINI_API_KEY` empty.
-
-### 4. Run the app
-
-```bash
-python app.py
-```
-
-If port `5000` is already in use:
-
-```bash
-PORT=5003 python app.py
-```
-
-Then open:
-
-```text
-http://localhost:5000
-```
-
-or
-
-```text
-http://localhost:5003
-```
-
-## API Endpoints
-
-### Main honeypot endpoint
-
-```text
-POST /api/honeypot
-```
-
-Headers:
-
-```text
-X-API-Key: <SECRET_API_KEY>
-Content-Type: application/json
-```
-
-Body:
-
-```json
-{
-  "sessionId": "test-001",
-  "message": "Congratulations! You have won Rs 50,000 lottery. Send your UPI ID to claim."
-}
-```
-
-### Other endpoints
-
-- `POST /hcs_A0001`
-- `GET /api/session/<session_id>`
-- `GET /api/threats`
-- `GET /api/stats`
-- `GET /api/threat_feed`
-- `GET /health`
-- `GET /`
-
-## Example Test Message
-
-```text
 Congratulations! You have won Rs 50,000 lottery. Send your UPI ID to claim.
 ```
-
-Other useful demo messages:
-
-```text
+```
 Sir your bank KYC is expired. Verify now at http://secure-verify-bank.net/login
 ```
-
-```text
+```
 Work from home job available. Earn Rs 5000 daily. Registration fee only Rs 499. Pay on jobshelp@paytm
 ```
-
-```text
+```
 Invest Rs 1000 today and get Rs 10000 in 7 days guaranteed. Call 9876543210 now.
 ```
 
-## Deployment
+---
 
-This repo is ready for simple deployment platforms like Render.
+## 📡 API Endpoints
 
-### Render settings
+### Primary (Hackathon-Compliant)
+```bash
+POST /hcs_A0001
+Headers: x-api-key: <your-key>
+Body: { "sessionId": "abc123", "message": "Congratulations! You won Rs 50,000..." }
+Response: { "status": "success", "reply": "Arre wah! Kitne paise milenge exactly?" }
+```
 
-- Build command:
+### Extended
+```
+POST /api/honeypot       → Full response with intel + scam detection
+GET  /api/session/<id>   → Full session data
+GET  /api/threats        → All closed threat sessions
+GET  /api/stats          → System-wide statistics
+GET  /api/threat_feed    → Public threat feed for dashboard
+GET  /health             → Health check
+GET  /                   → Live dashboard
+```
+
+---
+
+## 🛠️ Local Setup
 
 ```bash
+git clone https://github.com/akshat-create/agentic-honeypot
+cd agentic-honeypot
+
+python3.12 -m venv .venv
+source .venv/bin/activate
+
 pip install -r requirements.txt
+
+cp .env.example .env
+# Add your GEMINI_API_KEY (optional — fallback mode works without it)
+
+python app.py
+# → http://localhost:5000
 ```
 
-- Start command:
+---
 
-```bash
-gunicorn app:app --bind 0.0.0.0:$PORT --workers 2
-```
+## ☁️ Deploy to Render (Free)
 
-### Required environment variables
+1. Push to GitHub
+2. Go to [render.com](https://render.com) → New Web Service → connect repo
+3. Set environment variables: `GEMINI_API_KEY`, `SECRET_API_KEY`, `PORT=10000`
+4. Build command: `pip install -r requirements.txt`
+5. Start command: `gunicorn app:app --bind 0.0.0.0:$PORT --workers 2`
 
-- `SECRET_API_KEY`
-- `MAX_TURNS`
-- `PORT`
+---
 
-Optional:
+## 📊 Intelligence Extracted
 
-- `GEMINI_API_KEY`
-- `GEMINI_MODEL`
+The system automatically extracts:
+- **UPI IDs** — `scammer@paytm`, `fraud@okaxis`
+- **Phone Numbers** — Indian mobile numbers (6–9 series)
+- **Phishing Links** — Full URLs from messages
+- **Bank Account Numbers** — 9–18 digit sequences
+- **IFSC Codes** — Standard format detection
+- **Aadhaar Patterns** — 12-digit number patterns
 
-## Notes
+---
 
-- Recommended Python version: `3.10` to `3.12`
-- Python `3.14+` may install successfully but can break older Gemini SDK flows
-- If Gemini is unavailable, the app automatically uses local fallback replies
-- `.env` is ignored by Git and should not be uploaded
+## 🔮 Roadmap
 
-## GitHub Upload Checklist
+- [ ] Telegram bot integration for real-time alerts
+- [ ] PostgreSQL persistence for session storage
+- [ ] WhatsApp Business API honeypot channel
+- [ ] ML-based scam classifier (replace rule-based)
+- [ ] Multi-language support (Hindi, Tamil, Telugu)
+- [ ] Threat intelligence STIX export
 
-- `.env` stays local only
-- `.venv/` and `.venv312/` are ignored
-- `README.md` is updated
-- `runtime.txt` is included for Python version pinning
-- `Procfile` is included for deployment
+---
 
-## Disclaimer
+## 👨‍💻 Author
 
-This project is for cybersecurity research, education, and demo use only. Do not use it to target real people outside controlled and lawful environments.
+**Akshat Pandey** — B.Tech CSE (Data Science), 2nd Year
+[GitHub](https://github.com/akshat-create) · [LinkedIn](https://www.linkedin.com/in/akshatpandey8299/)
+
+Originally built for the **India AI-Impact Buildathon 2026**. Upgraded to production-grade for real-world deployment.
+
+---
+
+## ⚠️ Disclaimer
+
+This tool is for **cybersecurity research and education only**. It helps document and understand scam patterns to protect potential victims. Do not use against real people outside of controlled research environments.
